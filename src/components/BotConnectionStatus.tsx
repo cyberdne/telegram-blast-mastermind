@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
-import { Clock, Settings, Bell } from "lucide-react";
-import { TelegramAccount, connectTelegramAccount } from '@/utils/telegramBotService';
+import { Clock, Settings, Bell, Terminal } from "lucide-react";
+import { TelegramAccount, connectTelegramAccount, isTermuxEnvironment, checkTermuxRequirements } from '@/utils/telegramBotService';
 
 interface BotConnectionStatusProps {
   account: TelegramAccount;
@@ -22,6 +22,27 @@ const BotConnectionStatus: React.FC<BotConnectionStatusProps> = ({
   const [error, setError] = useState<string | undefined>(account.error);
   const [lastAttempt, setLastAttempt] = useState<Date | null>(null);
   const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
+  const [isTermux, setIsTermux] = useState(false);
+  const [termuxReady, setTermuxReady] = useState<boolean | null>(null);
+
+  // Check if we're in Termux environment
+  useEffect(() => {
+    const checkTermux = async () => {
+      const termuxEnv = isTermuxEnvironment();
+      setIsTermux(termuxEnv);
+      
+      if (termuxEnv) {
+        const reqCheck = await checkTermuxRequirements();
+        setTermuxReady(reqCheck.satisfied);
+        
+        if (!reqCheck.satisfied) {
+          setError(`Missing Termux requirements: ${reqCheck.missing.join(", ")}`);
+        }
+      }
+    };
+    
+    checkTermux();
+  }, []);
 
   // Function to connect to Telegram
   const handleConnect = async () => {
@@ -95,6 +116,12 @@ const BotConnectionStatus: React.FC<BotConnectionStatusProps> = ({
             status === 'error' ? 'bg-destructive' : 'bg-neutral-gray'
           }`} />
           Bot Connection Status
+          {isTermux && (
+            <Badge variant="outline" className="ml-2">
+              <Terminal className="h-3 w-3 mr-1" />
+              Termux
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -106,7 +133,7 @@ const BotConnectionStatus: React.FC<BotConnectionStatusProps> = ({
             </div>
             <Badge 
               variant={
-                status === 'online' ? 'success' :
+                status === 'online' ? 'default' :  // Changed from 'success' to 'default'
                 status === 'connecting' ? 'secondary' :
                 status === 'error' ? 'destructive' : 'outline'
               }
@@ -121,6 +148,17 @@ const BotConnectionStatus: React.FC<BotConnectionStatusProps> = ({
             </div>
           )}
           
+          {isTermux && termuxReady === false && (
+            <div className="text-sm bg-muted p-2 rounded">
+              <p className="font-medium">Termux Setup Required:</p>
+              <ol className="list-decimal list-inside text-xs pl-2 pt-1">
+                <li>Install required packages</li>
+                <li>Run 'pkg install nodejs python'</li>
+                <li>Run 'pip install telethon'</li>
+              </ol>
+            </div>
+          )}
+          
           {lastAttempt && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
@@ -132,10 +170,12 @@ const BotConnectionStatus: React.FC<BotConnectionStatusProps> = ({
             {status !== 'connecting' ? (
               <Button 
                 onClick={handleConnect} 
-                variant={status === 'online' ? 'outline' : 'success'}
+                variant={status === 'online' ? 'outline' : 'default'} // Changed from 'success' to 'default'
                 className="w-full"
+                disabled={isTermux && termuxReady === false}
               >
                 {status === 'online' ? 'Reconnect' : 'Connect to Telegram'}
+                {isTermux && ' (Termux)'}
               </Button>
             ) : (
               <Button disabled className="w-full">
@@ -162,6 +202,12 @@ const BotConnectionStatus: React.FC<BotConnectionStatusProps> = ({
               >
                 Cancel
               </Button>
+            </div>
+          )}
+          
+          {isTermux && (
+            <div className="text-xs text-muted-foreground mt-2">
+              <p>Running in Termux environment. Some features may be optimized for terminal usage.</p>
             </div>
           )}
         </div>
