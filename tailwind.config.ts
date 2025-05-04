@@ -74,7 +74,8 @@ export default {
 					accent: '#6366f1',
 					success: '#10b981',
 					danger: '#ef4444',
-					warning: '#f59e0b'
+					warning: '#f59e0b',
+					error: '#ef4444'
 				}
 			},
 			borderRadius: {
