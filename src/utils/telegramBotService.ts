@@ -125,7 +125,7 @@ export const sendMessageToGroups = async (
 export const isWithinActiveSchedule = (config: TelegramBotConfig): boolean => {
   const now = new Date();
   const currentHour = now.getHours();
-  const currentDay = now.toLocaleDateString('en-US', { weekday: 'lowercase' });
+  const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
   
   const isActiveHour = currentHour >= config.activeHours.start && currentHour < config.activeHours.end;
   const isActiveDay = config.activeDays.includes(currentDay);
@@ -141,6 +141,9 @@ export const calculateNextMessageTime = (config: TelegramBotConfig): Date => {
     : config.delayBetweenMessages;
   
   const nextTime = new Date(now.getTime() + delaySeconds * 1000);
+  
+  const currentHour = now.getHours();
+  const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
   
   // If next time is outside active hours, adjust to next active period
   if (!isWithinActiveSchedule({ ...config, activeHours: { start: config.activeHours.start, end: config.activeHours.end } })) {

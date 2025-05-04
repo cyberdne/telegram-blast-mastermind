@@ -37,7 +37,7 @@ const BotConnectionStatus: React.FC<BotConnectionStatusProps> = ({
         toast({
           title: "Connection Successful",
           description: `Bot is now connected to @${account.username}`,
-          variant: "success",
+          variant: "default", // Changed from "success" to "default"
         });
         if (onStatusChange) onStatusChange(true);
       } else {
